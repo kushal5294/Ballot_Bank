@@ -14,6 +14,9 @@ struct PollRowView: View {
     @StateObject var viewModel: VotingModel
     @State private var hasVoted = false
     @Binding var devMode: Bool
+    @EnvironmentObject var authView: AuthViewModel
+
+    
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -68,6 +71,7 @@ struct PollRowView: View {
                                     hasVoted = true
                                     votes += 1
                                     viewModel.addVote(to: poll, with: option)
+                                    authView.addVote(voteId: poll.id.uuidString)
                                 }) {
                                     Text("\(option)")
                                         .foregroundColor(.black)
@@ -110,6 +114,12 @@ struct PollRowView: View {
                 withAnimation {
                     isExpanded.toggle()
                 }
+            }
+        }
+        .onAppear {
+            // Check if the current user has already voted for this poll
+            if let currentUserVotes = authView.currentUser?.votes {
+                hasVoted = currentUserVotes.contains(poll.id.uuidString)
             }
         }
     }

@@ -10,7 +10,6 @@ import CryptoKit
 struct Blockchain: Codable, Identifiable {
     var id = UUID()
     var chain = [Block]()
-    let difficulty = 2
     
     mutating func createInitialBlock() {
         let initialDate = "2024-07-02T00:00:00Z"
@@ -43,15 +42,22 @@ struct Blockchain: Codable, Identifiable {
     
     private func mineBlock(block: Block) -> Block {
         var newBlock = block
-        while !newBlock.hash.hasPrefix(String(repeating: "0", count: difficulty)) {
+        while !newBlock.hash.hasPrefix(String(repeating: "0", count: 2)) {
             newBlock.nonce += 1
             newBlock.hash = Block.calculateHash(data: newBlock.data, previousHash: newBlock.previousHash, index: newBlock.index, time: newBlock.timeStamp, nonce: newBlock.nonce)
         }
         return newBlock
     }
     
-    init() {
-        self.chain = []
-        createInitialBlock()
+    init(chain: [Block]) {
+        print("DEBUG: in blockchain")
+
+        self.chain = chain
+        print("DEBUG: We have \(self.chain.count) blocks")
+        if chain.isEmpty {
+            print("DEBUG: shits empty")
+
+            createInitialBlock()
+        }
     }
 }

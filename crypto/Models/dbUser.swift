@@ -13,5 +13,6 @@ struct dbUser: Identifiable, Decodable {
     let username: String
     let email: String
     var portfolio: [PortfolioItem]
+    var votes: Set<String> 
     
 }

@@ -22,6 +22,14 @@ struct Poll: Codable, Identifiable {
         self.voteCounts = []
         self.status = "Open"
     }
+    init(title: String, cat: String, options: [String], id: UUID, status: String) {
+        self.title = title
+        self.category = cat
+        self.options = options
+        self.voteCounts = []
+        self.status = status
+        self.id = id
+    }
     
     mutating func addVote(response: Block) {
         voteCounts.append(response)

@@ -4,12 +4,17 @@
 //  Created by Kushal Patel on 6/16/24.
 //
 
+//  Profile.swift
+//  crypto
+//
+//  Created by Kushal Patel on 6/16/24.
+//
+
 import SwiftUI
 import Kingfisher
 import Charts
 
 struct Profile: View {
-
     @StateObject var homeViewModel = HomeViewModel()
     @State private var coinPortfolio: [(coin: Coin, value: Double)] = []
     @State private var wallet: Double = 0.0
@@ -18,15 +23,18 @@ struct Profile: View {
     @State private var amount = ""
     @State private var showSellModal = false
     @EnvironmentObject var viewModel: AuthViewModel
-    @StateObject var user: User
-        
-    init(viewModel: AuthViewModel) {
-        _user = StateObject(wrappedValue: User(viewModel: viewModel))
+    @StateObject private var user: User
+    
+    init() {
+        if let currentUser = AuthViewModel().currentUser {
+            _user = StateObject(wrappedValue: User(port: currentUser.portfolio))
+        } else {
+            _user = StateObject(wrappedValue: User(port: []))
+        }
     }
 
-
     var body: some View {
-        if let usr = viewModel.UserSession {
+        if let usr = viewModel.currentUser {
             NavigationView {
                 if homeViewModel.coins.isEmpty {
                     ProgressView()
@@ -34,7 +42,7 @@ struct Profile: View {
                         .scaleEffect(3)
                 } else {
                     VStack {
-                        Text("My Portfolio")
+                        Text("\(usr.username)'s Portfolio")
                             .font(.title)
                             .padding(.top)
                             .fontWeight(.bold)
@@ -66,7 +74,6 @@ struct Profile: View {
                         .padding(.top)
                         .padding(.bottom, 0)
 
-
                         Text("My Coins")
                             .font(.headline)
                             .padding(.top, 3)
@@ -81,24 +88,20 @@ struct Profile: View {
                         
                         HStack {
                             Button(action: {
-                                // Action for Buy button
                                 showBuyModal = true
                             }) {
                                 Text("Buy")
                                     .font(.headline)
                                     .padding(.horizontal, 20)
-                                    
                                     .foregroundColor(.red)
                             }
                             
                             Button(action: {
-                                // Action for Sell button
                                 showSellModal = true
                             }) {
                                 Text("Sell")
                                     .font(.headline)
                                     .padding()
-                                    
                                     .foregroundColor(.green)
                             }
                         }
@@ -109,6 +112,7 @@ struct Profile: View {
                         Spacer()
                     }
                     .onAppear {
+                        user.portfolio = usr.portfolio
                         print("Profile View appeared. Fetching coin data.")
                         updateCoinPortfolio()
                     }
@@ -118,82 +122,78 @@ struct Profile: View {
                         Text("Sign Out")
                             .foregroundColor(.blue)
                     })
-                    
                 }
             }
             .sheet(isPresented: $showBuyModal, content: {
-                        VStack {
-                            Text("Add to Portfolio")
-                                .font(.title)
-                                .padding()
-                            
-                            TextField("Coin", text: $coin)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .padding()
-                            
-                            TextField("Amount", text: $amount)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .padding()
-                            
-                            Button(action: {
-                                user.addToPortfolio(item: coin, value: Double(amount) ?? 0.0)
-                                viewModel.addToPortfolio(coin: coin, value: Double(amount) ?? 0.0)
-                                updateCoinPortfolio()
-                                showBuyModal = false
-                                coin = ""
-                                amount = ""
-                            }) {
-                                Text("Add")
-                                    .font(.headline)
-                                    .padding()
-                                    .background(Color.blue)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(10)
-                            }
-                            .padding()
-                        }
+                VStack {
+                    Text("Add to Portfolio")
+                        .font(.title)
                         .padding()
-                    })
+                    
+                    TextField("Coin", text: $coin)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding()
+                    
+                    TextField("Amount", text: $amount)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding()
+                    
+                    Button(action: {
+                        user.addToPortfolio(item: coin, value: Double(amount) ?? 0.0)
+                        viewModel.addToPortfolio(coin: coin, value: Double(amount) ?? 0.0)
+                        updateCoinPortfolio()
+                        showBuyModal = false
+                        coin = ""
+                        amount = ""
+                    }) {
+                        Text("Add")
+                            .font(.headline)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                    }
+                    .padding()
+                }
+                .padding()
+            })
             .sheet(isPresented: $showSellModal, content: {
-                        VStack {
-                            Text("Sell from Portfolio")
-                                .font(.title)
-                                .padding()
-                            
-                            TextField("Coin", text: $coin)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .padding()
-                            
-                            TextField("Amount", text: $amount)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .padding()
-                            
-                            Button(action: {
-                                user.removeFromPortfolio(itemName: coin, value: Double(amount) ?? 0.0)
-                                viewModel.removeFromPortfolio(coin: coin, value: Double(amount) ?? 0.0)
-                                updateCoinPortfolio()
-                                showSellModal = false
-                                coin = ""
-                                amount = ""
-                            }) {
-                                Text("Sell")
-                                    .font(.headline)
-                                    .padding()
-                                    .background(Color.blue)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(10)
-                            }
-                            .padding()
-                        }
+                VStack {
+                    Text("Sell from Portfolio")
+                        .font(.title)
                         .padding()
-                    })
-            
+                    
+                    TextField("Coin", text: $coin)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding()
+                    
+                    TextField("Amount", text: $amount)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding()
+                    
+                    Button(action: {
+                        user.removeFromPortfolio(itemName: coin, value: Double(amount) ?? 0.0)
+                        viewModel.removeFromPortfolio(coin: coin, value: Double(amount) ?? 0.0)
+                        updateCoinPortfolio()
+                        showSellModal = false
+                        coin = ""
+                        amount = ""
+                    }) {
+                        Text("Sell")
+                            .font(.headline)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                    }
+                    .padding()
+                }
+                .padding()
+            })
         }
     }
        
-
     private func updateCoinPortfolio() {
-        // Ensure that the HomeViewModel has finished fetching coin data before proceeding
         if homeViewModel.coins.isEmpty {
             print("Coin data not yet available. Retrying in 1 second.")
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {

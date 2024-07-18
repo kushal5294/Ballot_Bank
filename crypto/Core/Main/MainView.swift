@@ -28,7 +28,7 @@ struct MainView: View {
                         Text("Vote")
                     }
 
-                Profile(viewModel: viewModel)
+                Profile()
                     .tabItem {
                         Image(systemName: "person.crop.circle")
                         Text("Account")

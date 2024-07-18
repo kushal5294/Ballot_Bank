@@ -7,27 +7,81 @@
 import SwiftUI
 
 class VotingModel: ObservableObject {
-    @Published var blockChain = Blockchain()
+    @Published var blockChain = Blockchain(chain: [])
     @Published var polls = [Poll]()
     
+    private let blockService = BlockService()
+    
     init() {
-        blockChain = Blockchain()
-        
-        dummyPolls()
-
-        dummyVotes()
-        
-        // Randomly closing 3 polls
-        let randomIndexes = (0..<polls.count).shuffled().prefix(6)
-        for index in randomIndexes {
-            polls[index].status = "Closed"
+        fetchBlockchain()
+        processBlocks()
+    }
+    
+    func fetchBlockchain() {
+        blockService.fetchBlockchain { result in
+            switch result {
+            case .success(let blocks):
+                DispatchQueue.main.async {
+                    self.blockChain = Blockchain(chain: blocks)
+//                    print("DEBUG: got good data from db")
+                    self.processBlocks()
+                }
+            case .failure(let error):
+//                print("Failed to fetch blockchain with error: \(error.localizedDescription)")
+                self.blockChain = Blockchain(chain: [])
+//                print("DEBUG: This is the first block: \(self.blockChain.chain[0].printBlock())")
+            }
         }
+//        print("DEBUG: Done fetching")
+    }
+    
+    func processBlocks() {
+        // Process blocks to create polls
+        for block in blockChain.chain {
+            if block.data.starts(with: "Created") {
+                createPollFromBlock(block: block)
+            }
+        }
+        
+        for poll in polls {
+//            print("DEBUG: We have a poll of (\(poll.title)) @ id:\(poll.id)")
+        }
+        
+        // Process blocks to render votes
+        for block in blockChain.chain {
+            if !block.data.starts(with: "Created") {
+                renderVote(from: block)
+            }
+        }
+    }
+    
+    func createPollFromBlock(block: Block) {
+        guard let pollData = block.poll else { return }
+        
+        let title = pollData.title
+        let category = pollData.category
+        let options = pollData.options
+        let id = pollData.id
+        let status = pollData.status
+        
+        var newPoll = Poll(title: title, cat: category, options: options, id: id, status: status)
+        newPoll.voteCounts.append(block)
+        polls.append(newPoll)
+    }
+    
+    func renderVote(from block: Block) {
+        let pollID = block.poll?.id
+//        print("adding \(block.data) to poll: \(String(describing: block.poll?.id))")
+        guard let pollIndex = polls.firstIndex(where: { $0.id == pollID }) else { return }
+        polls[pollIndex].addVote(response: block)
+//        print("DEBUG: \(polls[pollIndex].title) poll has \(polls[pollIndex].voteCounts) votes")
     }
     
     func addVote(to poll: Poll, with option: String) {
         guard let pollIndex = polls.firstIndex(where: { $0.id == poll.id }) else { return }
         let response = blockChain.createBlock(data: option, poll: poll)
         polls[pollIndex].addVote(response: response)
+        saveBlockToFirebase(block: response)
     }
     
     func createPoll(title: String, cat: String, opts: [String]) {
@@ -35,6 +89,18 @@ class VotingModel: ObservableObject {
         polls.append(newPoll)
         let response = blockChain.createBlock(data: "Created \(title) Poll", poll: newPoll)
         polls[polls.count - 1].addVote(response: response)
+        saveBlockToFirebase(block: response)
+    }
+    
+    private func saveBlockToFirebase(block: Block) {
+        blockService.saveBlock(block) { result in
+            switch result {
+            case .success:
+                print("Block saved to Firebase successfully.")
+            case .failure(let error):
+                print("Failed to save block to Firebase with error: \(error.localizedDescription)")
+            }
+        }
     }
     
     func dummyVotes() {
@@ -54,7 +120,8 @@ class VotingModel: ObservableObject {
             }
         }
     }
-    func dummyPolls(){
+    
+    func dummyPolls() {
         createPoll(title: "Best NFL Team", cat: "NFL", opts: ["Lions", "Packers", "Chiefs"])
         createPoll(title: "UFC 304 Prediction", cat: "UFC", opts: ["Edwards", "Muhammad"])
         createPoll(title: "Best Social Media Platform", cat: "Tech", opts: ["Twitter", "Instagram", "Facebook"])
@@ -71,6 +138,12 @@ class VotingModel: ObservableObject {
         createPoll(title: "Top Smartphone Brand", cat: "Tech", opts: ["Apple", "Samsung", "Google"])
         createPoll(title: "Favorite Color", cat: "General", opts: ["Blue", "Red"])
         createPoll(title: "Preferred Music Genre", cat: "Music", opts: ["Rock", "Pop", "Classical"])
-        
+    }
+    
+    private func closeRandomPolls() {
+        let randomIndexes = (0..<polls.count).shuffled().prefix(6)
+        for index in randomIndexes {
+            polls[index].status = "Closed"
+        }
     }
 }
