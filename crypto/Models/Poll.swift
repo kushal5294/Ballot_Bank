@@ -6,60 +6,58 @@
 //
 
 import Foundation
+import RealmSwift
 
-struct Poll: Codable, Identifiable {
-    var id: UUID = UUID()
-    var title: String
-    var category: String
-    var options: [String]
-    var voteCounts: [Block]
-    var status: String
+class Poll: Object, ObjectKeyIdentifiable {
+    @Persisted(primaryKey: true) var _id: UUID = UUID()
+    @Persisted var category: String = ""
+    @Persisted var options: List<String>
+    @Persisted var status: String = ""
+    @Persisted var title: String = ""
+    @Persisted var voteCounts: List<Block>
+    
+    override init() {
+        super.init()
+    }
     
     init(title: String, cat: String, options: [String]) {
+        super.init()
         self.title = title
         self.category = cat
-        self.options = options
-        self.voteCounts = []
+        self.options.append(objectsIn: options)
         self.status = "Open"
     }
-    init(title: String, cat: String, options: [String], id: UUID, status: String) {
+    
+    init(title: String, cat: String, options: List<String>, id: UUID, status: String) {
+        super.init()
         self.title = title
         self.category = cat
         self.options = options
-        self.voteCounts = []
         self.status = status
-        self.id = id
+        self._id = id
     }
     
-    mutating func addVote(response: Block) {
+    func addVote(response: Block) {
         voteCounts.append(response)
     }
+    
     func getWinner() -> String {
         if voteCounts.count == 1 {
             return "No Votes"
         }
-        var hashMap = Dictionary<String, Int>()
-        for block in voteCounts{
-            if block.data.prefix(7).lowercased() == "Created"{
+        var hashMap = [String: Int]()
+        for block in voteCounts {
+            if block.data.prefix(7).lowercased() == "created" {
                 continue
             }
-            else{
-                if let count = hashMap[block.data]{
-                    hashMap[block.data]  = count + 1
-                }
-                else{
-                    hashMap[block.data] = 1
-                }
-            }
+            hashMap[block.data, default: 0] += 1
         }
-        let maxVotes = hashMap.values.max()
+        let maxVotes = hashMap.values.max() ?? 0
         let winners = hashMap.filter { $0.value == maxVotes }.map { $0.key }
         if winners.count == 1 {
             return winners.first!
-        } 
-        else {
+        } else {
             return winners.joined(separator: " and ") + " ties"
         }
     }
 }
-

@@ -22,7 +22,7 @@ struct BlocksView: View {
                                 .font(.subheadline)
                             Text("Hash:")
                                 .fontWeight(.bold)
-                            Text("\(poll.voteCounts[index].hash)")
+                            Text("\(poll.voteCounts[index].thisHash)")
                                 .font(.subheadline)
                             Text("Prev Hash:")
                                 .fontWeight(.bold)

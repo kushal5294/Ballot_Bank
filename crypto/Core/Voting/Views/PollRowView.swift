@@ -66,14 +66,16 @@ struct PollRowView: View {
                 if isExpanded {
                     if !hasVoted && poll.status == "Open" {
                         HStack(spacing: 30) {
+//                            let nonOptionalOptions = poll.options.compactMap { $0 }
+
                             ForEach(poll.options, id: \.self) { option in
                                 Button(action: {
                                     hasVoted = true
                                     votes += 1
                                     viewModel.addVote(to: poll, with: option)
-                                    authView.addVote(voteId: poll.id.uuidString)
+                                    authView.addVote(voteId: poll._id.uuidString)
                                 }) {
-                                    Text("\(option)")
+                                    Text("\((option != nil) ? option : "")")
                                         .foregroundColor(.black)
                                         .padding(.vertical, 8)
                                         .padding(.horizontal, 12)
@@ -119,7 +121,7 @@ struct PollRowView: View {
         .onAppear {
             // Check if the current user has already voted for this poll
             if let currentUserVotes = authView.currentUser?.votes {
-                hasVoted = currentUserVotes.contains(poll.id.uuidString)
+                hasVoted = currentUserVotes.contains(poll._id.uuidString)
             }
         }
     }

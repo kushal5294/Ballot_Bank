@@ -3,6 +3,7 @@ import Firebase
 
 class AuthViewModel: ObservableObject {
     @Published var UserSession: FirebaseAuth.User?
+    
     @Published var currentUser: dbUser?
     private let service = UserService()
     

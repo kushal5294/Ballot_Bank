@@ -8,17 +8,19 @@
 
 import Foundation
 import CryptoKit
+import RealmSwift
 
-struct Block: Codable, Identifiable {
-    var id = UUID()
-    var hash: String
-    var poll: Poll?
-    var data: String
-    var previousHash: String
-    var index: Int
-    var timeStamp: String
-    var nonce: Int
-    
+class Block: Object, ObjectKeyIdentifiable {
+    @Persisted(primaryKey: true) var _id: ObjectId
+    @Persisted var poll: Poll?
+    @Persisted var data: String
+    @Persisted var previousHash: String
+    @Persisted var index: Int
+    @Persisted var timeStamp: String
+    @Persisted var nonce: Int
+    @Persisted var thisHash: String
+
+
     // Function to generate a hash for a given string
     static func generateHash(from input: String) -> String {
         let inputData = Data(input.utf8)
@@ -26,25 +28,30 @@ struct Block: Codable, Identifiable {
         return hashed.map { String(format: "%02x", $0) }.joined()
     }
     
-    // Initializer for the Block struct
-    init(poll: Poll, data: String, previousHash: String, index: Int, time: String) {
+    // Initializer for the Block class
+    convenience init(poll: Poll?, data: String, previousHash: String, index: Int, time: String) {
+        self.init()
+        self._id = ObjectId.generate() // Ensure unique id for each block
         self.data = data
         self.previousHash = previousHash
         self.index = index
         self.nonce = 0
         self.poll = poll
         self.timeStamp = time
-        self.hash = Block.calculateHash(data: data, previousHash: previousHash, index: index, time: time, nonce: nonce)
+        self.thisHash = Block.calculateHash(data: data, previousHash: previousHash, index: index, time: time, nonce: nonce)
     }
     
-    init(previousHash: String, index: Int, time: String) {
+    // Initializer for Genesis Block
+    convenience init(previousHash: String, index: Int, time: String) {
+        self.init()
+        self._id = ObjectId.generate() // Ensure unique id for each block
         self.data = "Genesis Block"
         self.previousHash = previousHash
         self.index = index
         self.nonce = 0
         self.poll = nil
         self.timeStamp = time
-        self.hash = Block.calculateHash(data: data, previousHash: previousHash, index: index, time: time, nonce: nonce)
+        self.thisHash = Block.calculateHash(data: data, previousHash: previousHash, index: index, time: time, nonce: nonce)
     }
     
     static func calculateHash(data: String, previousHash: String, index: Int, time: String, nonce: Int) -> String {

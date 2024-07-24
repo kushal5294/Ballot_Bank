@@ -21,7 +21,7 @@ struct BlockchainView: View {
                             .font(.subheadline)
                         Text("Hash:")
                             .fontWeight(.bold)
-                        Text("\(blockChain.chain[index].hash)")
+                        Text("\(blockChain.chain[index].thisHash)")
                             .font(.subheadline)
                         Text("Prev Hash:")
                             .fontWeight(.bold)

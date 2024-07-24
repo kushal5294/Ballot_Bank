@@ -7,7 +7,7 @@
 import Foundation
 import CryptoKit
 
-struct Blockchain: Codable, Identifiable {
+struct Blockchain: Identifiable {
     var id = UUID()
     var chain = [Block]()
     
@@ -20,7 +20,7 @@ struct Blockchain: Codable, Identifiable {
     mutating func createBlock(data: String, poll: Poll) -> Block {
         let previousBlock = chain.last!
         let newTime = getNextTimeStamp(previousTimeStamp: previousBlock.timeStamp)
-        var newBlock = Block(poll: poll, data: data, previousHash: previousBlock.hash, index: chain.count, time: newTime)
+        var newBlock = Block(poll: poll, data: data, previousHash: previousBlock.thisHash, index: chain.count, time: newTime)
         newBlock = mineBlock(block: newBlock)
         chain.append(newBlock)
         return newBlock
@@ -42,9 +42,9 @@ struct Blockchain: Codable, Identifiable {
     
     private func mineBlock(block: Block) -> Block {
         var newBlock = block
-        while !newBlock.hash.hasPrefix(String(repeating: "0", count: 2)) {
+        while !newBlock.thisHash.hasPrefix(String(repeating: "0", count: 2)) {
             newBlock.nonce += 1
-            newBlock.hash = Block.calculateHash(data: newBlock.data, previousHash: newBlock.previousHash, index: newBlock.index, time: newBlock.timeStamp, nonce: newBlock.nonce)
+            newBlock.thisHash = Block.calculateHash(data: newBlock.data, previousHash: newBlock.previousHash, index: newBlock.index, time: newBlock.timeStamp, nonce: newBlock.nonce)
         }
         return newBlock
     }

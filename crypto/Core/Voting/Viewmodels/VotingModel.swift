@@ -5,6 +5,7 @@
 //
 
 import SwiftUI
+import RealmSwift
 
 class VotingModel: ObservableObject {
     @Published var blockChain = Blockchain(chain: [])
@@ -23,20 +24,15 @@ class VotingModel: ObservableObject {
             case .success(let blocks):
                 DispatchQueue.main.async {
                     self.blockChain = Blockchain(chain: blocks)
-//                    print("DEBUG: got good data from db")
                     self.processBlocks()
                 }
             case .failure(let error):
-//                print("Failed to fetch blockchain with error: \(error.localizedDescription)")
                 self.blockChain = Blockchain(chain: [])
-//                print("DEBUG: This is the first block: \(self.blockChain.chain[0].printBlock())")
             }
         }
-//        print("DEBUG: Done fetching")
     }
     
     func processBlocks() {
-        // Process blocks to create polls
         for block in blockChain.chain {
             if block.data.starts(with: "Created") {
                 createPollFromBlock(block: block)
@@ -44,10 +40,9 @@ class VotingModel: ObservableObject {
         }
         
         for poll in polls {
-//            print("DEBUG: We have a poll of (\(poll.title)) @ id:\(poll.id)")
+            // Log polls if needed
         }
         
-        // Process blocks to render votes
         for block in blockChain.chain {
             if !block.data.starts(with: "Created") {
                 renderVote(from: block)
@@ -61,35 +56,66 @@ class VotingModel: ObservableObject {
         let title = pollData.title
         let category = pollData.category
         let options = pollData.options
-        let id = pollData.id
+        let id = pollData._id
         let status = pollData.status
         
-        var newPoll = Poll(title: title, cat: category, options: options, id: id, status: status)
-        newPoll.voteCounts.append(block)
-        polls.append(newPoll)
+        let newPoll = Poll(title: title, cat: category, options: options, id: id, status: status)
+        
+        do {
+            let realm = try Realm()
+            try realm.write {
+                newPoll.voteCounts.append(block)
+                polls.append(newPoll)
+            }
+        } catch {
+            print("Failed to create poll from block with error: \(error.localizedDescription)")
+        }
     }
     
     func renderVote(from block: Block) {
-        let pollID = block.poll?.id
-//        print("adding \(block.data) to poll: \(String(describing: block.poll?.id))")
+        guard let pollID = block.poll?.id else { return }
         guard let pollIndex = polls.firstIndex(where: { $0.id == pollID }) else { return }
-        polls[pollIndex].addVote(response: block)
-//        print("DEBUG: \(polls[pollIndex].title) poll has \(polls[pollIndex].voteCounts) votes")
+        
+        do {
+            let realm = try Realm()
+            try realm.write {
+                polls[pollIndex].addVote(response: block)
+            }
+        } catch {
+            print("Failed to render vote with error: \(error.localizedDescription)")
+        }
     }
     
     func addVote(to poll: Poll, with option: String) {
         guard let pollIndex = polls.firstIndex(where: { $0.id == poll.id }) else { return }
+        
         let response = blockChain.createBlock(data: option, poll: poll)
-        polls[pollIndex].addVote(response: response)
-        saveBlockToFirebase(block: response)
+        
+        do {
+            let realm = try Realm()
+            try realm.write {
+                polls[pollIndex].addVote(response: response)
+            }
+            saveBlockToFirebase(block: response)
+        } catch {
+            print("Failed to add vote with error: \(error.localizedDescription)")
+        }
     }
     
     func createPoll(title: String, cat: String, opts: [String]) {
         let newPoll = Poll(title: title, cat: cat, options: opts)
         polls.append(newPoll)
         let response = blockChain.createBlock(data: "Created \(title) Poll", poll: newPoll)
-        polls[polls.count - 1].addVote(response: response)
-        saveBlockToFirebase(block: response)
+        
+        do {
+            let realm = try Realm()
+            try realm.write {
+                polls[polls.count - 1].addVote(response: response)
+            }
+            saveBlockToFirebase(block: response)
+        } catch {
+            print("Failed to create poll with error: \(error.localizedDescription)")
+        }
     }
     
     private func saveBlockToFirebase(block: Block) {
@@ -142,8 +168,15 @@ class VotingModel: ObservableObject {
     
     private func closeRandomPolls() {
         let randomIndexes = (0..<polls.count).shuffled().prefix(6)
-        for index in randomIndexes {
-            polls[index].status = "Closed"
+        do {
+            let realm = try Realm()
+            try realm.write {
+                for index in randomIndexes {
+                    polls[index].status = "Closed"
+                }
+            }
+        } catch {
+            print("Failed to close random polls with error: \(error.localizedDescription)")
         }
     }
 }
