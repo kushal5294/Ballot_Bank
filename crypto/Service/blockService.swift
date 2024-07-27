@@ -13,7 +13,7 @@ struct BlockService {
     private let db = Firestore.firestore()
     
     func fetchBlockchain(completion: @escaping (Result<[Block], Error>) -> Void) {
-        db.collection("Blockchain").getDocuments { snapshot, error in
+        db.collection("Blockchain").order(by: "index").getDocuments { snapshot, error in
             if let error = error {
                 completion(.failure(error))
                 return

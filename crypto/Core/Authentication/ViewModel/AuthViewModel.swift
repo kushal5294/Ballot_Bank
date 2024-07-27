@@ -34,6 +34,7 @@ class AuthViewModel: ObservableObject {
             
             guard let user = result?.user else { return }
             self.UserSession = user
+            self.fetchUser()
             
             print("DEBUG: registered user successfully")
             
@@ -44,7 +45,7 @@ class AuthViewModel: ObservableObject {
                 "email": email,
                 "username": username.lowercased(),
                 "portfolio": portfolio.map { ["name": $0.name, "value": $0.value] },
-                "votes": Array(votes) // Convert set to array for Firestore
+                "votes": Array(votes)
             ]
             
             Firestore.firestore().collection("users")
@@ -53,7 +54,7 @@ class AuthViewModel: ObservableObject {
                     print("DEBUG: Uploaded user data")
                 }
         }
-        self.fetchUser()
+        
     }
     
     func signOut() {
