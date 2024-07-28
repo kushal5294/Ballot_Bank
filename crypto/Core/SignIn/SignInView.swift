@@ -53,6 +53,17 @@ struct SignInView: View {
                                         .cornerRadius(10)
                                         .padding()
                                 }
+                Button(action: {
+                    viewModel.login(withEmail: "Dev@test.com", password: "devtest")
+                }) {
+                    Text("Dev Demo")
+                        .frame(minWidth: 0, maxWidth: .infinity)
+                        .padding()
+                        .foregroundColor(.white)
+                        .background(Color.blue)
+                        .cornerRadius(10)
+                        .padding()
+                }
                                 
                 
                 

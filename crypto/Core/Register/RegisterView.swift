@@ -16,7 +16,7 @@ struct RegisterView: View {
     var body: some View {
         NavigationStack {
             VStack {
-                Image("logo") // Replace with your actual image name
+                Image("BB_logo") // Replace with your actual image name
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 100, height: 100) // Adjust size as needed
