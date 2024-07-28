@@ -12,32 +12,18 @@ struct Blockchain: Codable, Identifiable {
     var chain = [Block]()
     
     mutating func createInitialBlock() {
-        let initialDate = "2024-07-02T00:00:00Z"
-        let genesisBlock = Block(previousHash: "0000", index: 0, time: initialDate)
+        let currentDate = ISO8601DateFormatter().string(from: Date())
+        let genesisBlock = Block(previousHash: "0000", index: 0, time: currentDate)
         chain.append(genesisBlock)
     }
     
     mutating func createBlock(data: String, poll: Poll) -> Block {
         let previousBlock = chain.last!
-        let newTime = getNextTimeStamp(previousTimeStamp: previousBlock.timeStamp)
-        var newBlock = Block(poll: poll, data: data, previousHash: previousBlock.hash, index: chain.count, time: newTime)
+        let currentDate = ISO8601DateFormatter().string(from: Date())
+        var newBlock = Block(poll: poll, data: data, previousHash: previousBlock.hash, index: chain.count-1, time: currentDate)
         newBlock = mineBlock(block: newBlock)
         chain.append(newBlock)
         return newBlock
-    }
-    
-    private func getNextTimeStamp(previousTimeStamp: String) -> String {
-        let dateFormatter = ISO8601DateFormatter()
-        if let previousDate = dateFormatter.date(from: previousTimeStamp) {
-            let randomHoursToAdd = Int.random(in: 1...12)
-            let randomMinutesToAdd = Int.random(in: 0...59)
-            let randomSecondsToAdd = Int.random(in: 0...59)
-            var newDate = Calendar.current.date(byAdding: .hour, value: randomHoursToAdd, to: previousDate)!
-            newDate = Calendar.current.date(byAdding: .minute, value: randomMinutesToAdd, to: newDate)!
-            newDate = Calendar.current.date(byAdding: .second, value: randomSecondsToAdd, to: newDate)!
-            return dateFormatter.string(from: newDate)
-        }
-        return previousTimeStamp
     }
     
     private func mineBlock(block: Block) -> Block {
@@ -50,14 +36,8 @@ struct Blockchain: Codable, Identifiable {
     }
     
     init(chain: [Block]) {
-        print("DEBUG: in blockchain")
-
+//        print("DEBUG: in blockchain")
         self.chain = chain
-        print("DEBUG: We have \(self.chain.count) blocks")
-        if chain.isEmpty {
-            print("DEBUG: shits empty")
-
-            createInitialBlock()
-        }
+//        print("DEBUG: We have \(self.chain.count) blocks")
     }
 }

@@ -15,7 +15,7 @@ struct SignInView: View {
     var body: some View {
         NavigationStack {
             VStack {
-                Image("logo") // Replace with your actual image name
+                Image("BB_logo") // Replace with your actual image name
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 150, height: 150) // Adjust size as needed

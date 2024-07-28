@@ -49,7 +49,7 @@ struct VotingView: View {
                                 Spacer()
                                 NavigationLink(destination: BlockchainView(blockChain: viewModel.blockChain)) {
                                     HStack(spacing: 0) {
-                                        Text("See Local Blockchain")
+                                        Text("View Blockchain")
                                             .font(.subheadline)
                                             .foregroundColor(.blue)
                                         Image(systemName: "chevron.right")
